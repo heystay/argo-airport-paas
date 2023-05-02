@@ -9,7 +9,7 @@ COPY entrypoint.sh /app/entrypoint.sh
 ENV TZ="Asia/Shanghai"
 ENV NODE_ENV="production"
 RUN apt-get update &&\
-    apt-get install -y iproute2 coreutils systemd wget sudo supervisor openssh-server &&\
+    apt-get install -y iproute2 unzip coreutils systemd wget sudo supervisor openssh-server &&\
     # Clean up
     apt-get clean &&\
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* &&\
