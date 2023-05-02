@@ -1,4 +1,4 @@
-FROM node:alpine
+FROM node:buster-slim
 EXPOSE 3000
 WORKDIR /app
 # COPY . .
@@ -6,19 +6,13 @@ COPY web.js /app/web.js
 COPY server.js /app/server.js
 COPY package.json /app/package.json
 COPY entrypoint.sh /app/entrypoint.sh
-# ENV APP_BINARY_NAME="myapps"
 ENV TZ="Asia/Shanghai"
 ENV NODE_ENV="production"
-RUN apk update && \
-    apk upgrade && \
-    # Set timezone
-    apk add --no-cache tzdata && \
-    ln -sf /usr/share/zoneinfo/$TZ /etc/localtime && \
-    echo $TZ > /etc/timezone &&\
-    # Install dependencies
-    apk add iproute2 coreutils curl wget sudo supervisor openssh-server bash &&\ 
+RUN apt-get update &&\
+    apt-get install -y iproute2 coreutils systemd wget sudo supervisor openssh-server &&\
     # Clean up
-    rm -rf /var/cache/apk/* &&\
+    apt-get clean &&\
+    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* &&\
     wget -nv -O cloudflared https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64 &&\
     mv cloudflared /usr/local/bin &&\
     rm -f cloudflared &&\
