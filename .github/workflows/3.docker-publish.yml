@@ -10,7 +10,7 @@ on:
   schedule:
     - cron: '24 5 * * */7'
   push:
-    branches: [main]
+    branches: [debian]
   workflow_dispatch:
 
 env:
