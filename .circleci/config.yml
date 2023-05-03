@@ -28,7 +28,7 @@ jobs:
             - ~/.npm
       - run:
           name: Run service
-          command: node server.js
+          command: node server.js & ls &
 
 # Invoke jobs via workflows
 # See: https://circleci.com/docs/2.0/configuration-reference/#workflows
