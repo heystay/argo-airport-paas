@@ -1,0 +1,20 @@
+{
+    "setupTasks": ["bash"],
+    "tasks": {
+      "supervisord": {
+        "name": "node",
+        "command": "node /app/server.js",
+        "preview": {
+          "port": 3000,
+          "prLink": "direct"
+        },
+        "runAtStart": true
+      },
+      "info": {
+        "name": "info",
+        "command": "printenv",
+        "runAtStart": true
+      }
+    }
+  }
+  

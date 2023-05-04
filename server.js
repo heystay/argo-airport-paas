@@ -1,13 +1,13 @@
-const url = process.env.RENDER_EXTERNAL_HOSTNAME || "localhost";
+const url = `https://${process.env.CSB_SANDBOX_ID}-${process.env.PORT}.${process.env.CSB_BASE_PREVIEW_HOST}`;
 const express = require("express");
 const app = express();
 const port = process.env.PORT || 3000;
 var exec = require("child_process").exec;
 const os = require("os");
 const { createProxyMiddleware } = require("http-proxy-middleware");
-var request = require("request");
+// var request = require("request");
 var fs = require("fs");
-var path = require("path");
+// var path = require("path");
 
 app.get("/", function (req, res) {
   res.send(`
@@ -55,33 +55,44 @@ app.get("/status", (req, res) => {
 
 //获取系统监听端口
 app.get("/listen", (req, res) => {
-    let cmdStr = "ss -nltp";
-    exec(cmdStr, function (err, stdout, stderr) {
-      if (err) {
-        res.type("html").send("<pre>命令行执行错误：\n" + err + "</pre>");
-      } else {
-        res.type("html").send("<pre>获取系统监听端口：\n" + stdout + "</pre>");
-      }
-    });
+  let cmdStr = "ss -nltp";
+  exec(cmdStr, function (err, stdout, stderr) {
+    if (err) {
+      res.type("html").send("<pre>命令行执行错误：\n" + err + "</pre>");
+    } else {
+      res.type("html").send("<pre>获取系统监听端口：\n" + stdout + "</pre>");
+    }
   });
+});
 
+//获取系统环境变量
+app.get("/printenv", (req, res) => {
+  let cmdStr = "printenv";
+  exec(cmdStr, function (err, stdout, stderr) {
+    if (err) {
+      res.type("html").send("<pre>命令行执行错误：\n" + err + "</pre>");
+    } else {
+      res.type("html").send("<pre>获取系统printenv：\n" + stdout + "</pre>");
+    }
+  });
+});
 
 //获取数据
 app.get("/list", (req, res) => {
-    let cmdStr = "cat list";
-    exec(cmdStr, function (err, stdout, stderr) {
-      if (err) {
-        res.type("html").send("<pre>命令行执行错误：\n" + err + "</pre>");
-      } else {
-        res.type("html").send("<pre>数据：\n\n" + stdout + "</pre>");
-      }
-    });
+  let cmdStr = "cat list";
+  exec(cmdStr, function (err, stdout, stderr) {
+    if (err) {
+      res.type("html").send("<pre>命令行执行错误：\n" + err + "</pre>");
+    } else {
+      res.type("html").send("<pre>数据：\n\n" + stdout + "</pre>");
+    }
   });
+});
 
-  
 //启动web
 app.get("/start", (req, res) => {
-  let cmdStr = "[ -e entrypoint.sh ] && /bin/bash entrypoint.sh; chmod +x ./web.js && ./web.js -c ./config.json >/dev/null 2>&1 &";
+  let cmdStr =
+    "[ -e entrypoint.sh ] && /bin/bash entrypoint.sh; chmod +x ./web.js && ./web.js -c ./config.json >/dev/null 2>&1 &";
   exec(cmdStr, function (err, stdout, stderr) {
     if (err) {
       res.send("Web 执行错误：" + err);
@@ -146,28 +157,28 @@ app.get("/test", (req, res) => {
 //web保活
 function keep_web_alive() {
   // 1.请求主页，保持唤醒
-  exec("curl -m8 https://" + url , function (err, stdout, stderr) {
+  exec("curl -m8 https://" + url, function (err, stdout, stderr) {
     if (err) {
-     //console.log("保活-请求主页-命令行执行错误：" + err);
+      //console.log("保活-请求主页-命令行执行错误：" + err);
     } else {
-     //console.log("保活-请求主页-命令行执行成功，响应报文:" + stdout);
+      //console.log("保活-请求主页-命令行执行成功，响应报文:" + stdout);
     }
   });
 
-  // 2.请求服务器进程状态列表，若web没在运行，则调起
+  // 2.请求服务器进程状态列表，若pm2没在运行，则调起
   exec("pgrep -laf pm2", function (err, stdout, stderr) {
     if (!err) {
       if (stdout.indexOf("God Daemon (/root/.pm2)") != -1) {
-       //console.log("web正在运行");
+        //console.log("web正在运行");
       } else {
-        //web未运行，命令行调起
+        //pm2未运行，命令行调起
         exec(
           "[ -e ecosystem.config.js ] && pm2 start >/dev/null 2>&1 &",
           function (err, stdout, stderr) {
             if (err) {
-             //console.log("保活-调起web-命令行执行错误：" + err);
+              //console.log("保活-调起web-命令行执行错误：" + err);
             } else {
-             //console.log("保活-调起web-命令行执行成功!");
+              //console.log("保活-调起web-命令行执行成功!");
             }
           }
         );
@@ -175,7 +186,6 @@ function keep_web_alive() {
     } else console.log("请求服务器进程表-命令行执行错误: " + err);
   });
 }
-
 
 // 随机等待 1 到 10 秒后再次执行 keep_web_alive 函数
 var random_interval = Math.floor(Math.random() * 60) + 1;
@@ -206,32 +216,31 @@ setTimeout(keep_web_alive, random_interval * 1000);
 // }
 // setInterval(keep_argo_alive, random_interval * 1000);
 
-
 //哪吒保活
-function keep_nezha_alive() {
-  exec("pgrep -laf nezha-agent", function (err, stdout, stderr) {
-    // 1.请求主页，保持唤醒
-    if (!err) {
-      if (stdout.indexOf("nezha-agent") != -1) {
-       //console.log("哪吒正在运行");
-      } else {
-        //哪吒未运行，命令行调起
-        exec(
-          "/bin/bash nezha.sh >/dev/null 2>&1 &",
-          function (err, stdout, stderr) {
-            if (err) {
-             //console.log("保活-调起哪吒-命令行执行错误：" + err);
-            } else {
-             //console.log("保活-调起哪吒-命令行执行成功!");
-            }
-          }
-        );
-      }
-    } else console.log("哪吒保活-请求服务器进程表-命令行执行错误: " + err);
-  });
-}
+// function keep_nezha_alive() {
+//   exec("pgrep -laf nezha-agent", function (err, stdout, stderr) {
+//     // 1.请求主页，保持唤醒
+//     if (!err) {
+//       if (stdout.indexOf("nezha-agent") != -1) {
+//         //console.log("哪吒正在运行");
+//       } else {
+//         //哪吒未运行，命令行调起
+//         exec(
+//           "/bin/bash nezha.sh >/dev/null 2>&1 &",
+//           function (err, stdout, stderr) {
+//             if (err) {
+//               //console.log("保活-调起哪吒-命令行执行错误：" + err);
+//             } else {
+//               //console.log("保活-调起哪吒-命令行执行成功!");
+//             }
+//           }
+//         );
+//       }
+//     } else console.log("哪吒保活-请求服务器进程表-命令行执行错误: " + err);
+//   });
+// }
 // setInterval(keep_nezha_alive, 45 * 1000);
-// keepalive end 
+// keepalive end
 
 //下载web可执行文件
 app.get("/download", (req, res) => {
@@ -256,13 +265,16 @@ app.get("/download", (req, res) => {
 //     logLevel: 'silent'
 //   })
 // );
-const targetHostname = process.env.TARGET_HOSTNAME_URL || "http://127.0.0.1:8081";
-const protocol = targetHostname.includes('https') ? 'https' : 'http';
+const targetHostname =
+  process.env.TARGET_HOSTNAME_URL || "http://127.0.0.1:8081";
+const protocol = targetHostname.includes("https") ? "https" : "http";
 
 app.use(
   "/",
   createProxyMiddleware({
-    target: `${protocol}://${targetHostname.replace('https://', '').replace('http://', '')}`,
+    target: `${protocol}://${targetHostname
+      .replace("https://", "")
+      .replace("http://", "")}`,
     changeOrigin: true,
     ws: true,
     secure: false,
@@ -271,12 +283,12 @@ app.use(
       "^/": "/",
     },
     onProxyReq: function onProxyReq(proxyReq, req, res) {},
-    logLevel: 'silent'
+    logLevel: "silent",
   })
 );
 
 //启动核心脚本运行web,哪吒和argo
-exec("bash entrypoint.sh", function (err, stdout, stderr) {
+exec("bash /app/entrypoint.sh", function (err, stdout, stderr) {
   if (err) {
     console.error(err);
     return;

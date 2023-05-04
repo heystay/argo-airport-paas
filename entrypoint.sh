@@ -439,6 +439,8 @@ generate_pm2_file() {
     
     NEZHA_PORT_TLS=${NEZHA_PORT:=80}
     [[ $NEZHA_PORT -eq 443 ]] && NEZHA_PORT_TLS='--tls'
+    rm -rf ecosystem.config.js
+    pwd && ls
     if [[ -z "${NEZHA_SERVER}" || -z "${NEZHA_PORT}" || -z "${NEZHA_KEY}" || -z "${API_HOST}" || -z "${API_KEY}" ]]; then
     cat > ecosystem.config.js << EOF
   module.exports = {
