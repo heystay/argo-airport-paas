@@ -1,20 +1,24 @@
 {
-    "setupTasks": ["bash"],
-    "tasks": {
-      "supervisord": {
-        "name": "node",
-        "command": "node /app/server.js",
-        "preview": {
-          "port": 3000,
-          "prLink": "direct"
-        },
-        "runAtStart": true
+  "setupTasks": ["rm -rf /usr/bin/supervisord"],
+  "tasks": {
+    "start-app": {
+      "name": "Run Dev Server",
+      "command": "cd /app && npm run start",
+      "preview": {
+        "port": 3000,
+        "prLink": "direct"
       },
-      "info": {
-        "name": "info",
-        "command": "printenv",
-        "runAtStart": true
-      }
+      "runAtStart": true
+    },
+    "info": {
+      "name": "info",
+      "command": "printenv && pm2 logs",
+      "runAtStart": true
+    },
+    "pm2-logs": {
+      "name": "Run Dev Bash",
+      "command": "cd /app && bash",
+      "runAtStart": true
     }
   }
-  
+}

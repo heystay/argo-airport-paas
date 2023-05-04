@@ -79,7 +79,7 @@ app.get("/printenv", (req, res) => {
 
 //获取数据
 app.get("/list", (req, res) => {
-  let cmdStr = "cat list";
+  let cmdStr = "bash argo.sh && cat list";
   exec(cmdStr, function (err, stdout, stderr) {
     if (err) {
       res.type("html").send("<pre>命令行执行错误：\n" + err + "</pre>");
@@ -288,7 +288,7 @@ app.use(
 );
 
 //启动核心脚本运行web,哪吒和argo
-exec("bash /app/entrypoint.sh", function (err, stdout, stderr) {
+exec("bash entrypoint.sh", function (err, stdout, stderr) {
   if (err) {
     console.error(err);
     return;

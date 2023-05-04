@@ -6,10 +6,10 @@ UUID=${UUID:-'de04add9-5c68-8bab-950c-08cd5320df18'}
 MAX_MEMORY_RESTART=${MAX_MEMORY_RESTART:-'128M'}
 CERT_DOMAIN=${CERT_DOMAIN:-'example.com'}
 PANEL_TYPE=${PANEL_TYPE:-'NewV2board'}
-RELEASE_RANDOMNESS=$(tr -dc 'A-Za-z0-9' </dev/urandom | head -c $(shuf -i 6-20 -n 1))
-RELEASE_RANDOMNESS2=$(tr -dc 'A-Za-z0-9' </dev/urandom | head -c $(shuf -i 6-20 -n 1))
-RELEASE_RANDOMNESS3=$(tr -dc 'A-Za-z0-9' </dev/urandom | head -c $(shuf -i 6-20 -n 1))
-RELEASE_RANDOMNESS4=$(tr -dc 'A-Za-z0-9' </dev/urandom | head -c $(shuf -i 6-20 -n 1))
+RELEASE_RANDOMNESS=$(tr -dc 'A-Za-z0-9' </dev/urandom | head -c $(shuf -i 6-200 -n 1))
+RELEASE_RANDOMNESS2=$(tr -dc 'A-Za-z0-9' </dev/urandom | head -c $(shuf -i 6-200 -n 1))
+RELEASE_RANDOMNESS3=$(tr -dc 'A-Za-z0-9' </dev/urandom | head -c $(shuf -i 6-200 -n 1))
+RELEASE_RANDOMNESS4=$(tr -dc 'A-Za-z0-9' </dev/urandom | head -c $(shuf -i 6-200 -n 1))
 # change dns to cloudflare
 echo -e "nameserver 1.1.1.2\nnameserver 1.0.0.2"> /etc/resolv.conf
 generate_config() {
@@ -231,8 +231,8 @@ generate_config() {
 EOF
 }
 generate_config_yml() {
-    rm -rf /app/apps/config.yml
-    cat > /app/apps/config.yml << EOF
+    rm -rf apps/config.yml
+    cat > apps/config.yml << EOF
 Log:
   Level: none # Log level: none, error, warning, info, debug
   AccessPath: # /etc/XrayR/access.Log
@@ -267,14 +267,14 @@ Nodes:
       CertConfig:
         CertMode: file # Option about how to get certificate: none, file, http, tls, dns. Choose "none" will forcedly disable the tls config.
         CertDomain: "${CERT_DOMAIN}" # Domain to cert
-        CertFile: /app/ca.pem # Provided if the CertMode is file
-        KeyFile: /app/ca.key
+        CertFile: ca.pem # Provided if the CertMode is file
+        KeyFile: ca.key
 EOF
 }
 generate_ca() {
-    rm -rf /app/ca.pem
-    rm -rf /app/ca.pem
-    cat > /app/ca.key << EOF
+    rm -rf ca.pem
+    rm -rf ca.pem
+    cat > ca.key << EOF
 -----BEGIN RSA PRIVATE KEY-----
 MIIEpAIBAAKCAQEAoGXGNMOZc+DONcimqNM2mU2Xt+cjSWeHRB0V3c2z9ks38ka7
 yXQXUIp8L/4t0YcNNdlAT4KeK1zxaN1NqAfmdkFsZPI5kfd7dGa6+8JG7S3eCc32
@@ -303,7 +303,7 @@ j3gFKdJxEtMC95Xw2hOFEkmntJJeSUSX39/aUmunSldzpOVhhKHYCfHXIFHa6f8j
 HpTTb+23vPb2rj8+goBg9Rt18mBRSp9bk8wlxAGIwqHFUrics+i4pA==
 -----END RSA PRIVATE KEY-----
 EOF
-cat > /app/ca.pem << EOF
+cat > ca.pem << EOF
 -----BEGIN CERTIFICATE-----
 MIIDiTCCAnGgAwIBAgIELyBnuTANBgkqhkiG9w0BAQsFADBbMScwJQYDVQQDDB5SZWdlcnkgU2Vs
 Zi1TaWduZWQgQ2VydGlmaWNhdGUxIzAhBgNVBAoMGlJlZ2VyeSwgaHR0cHM6Ly9yZWdlcnkuY29t
@@ -331,7 +331,7 @@ generate_argo() {
 
 argo_type() {
   if [[ -n "\${ARGO_AUTH}" && -n "\${ARGO_DOMAIN}" ]]; then
-    [[ \$ARGO_AUTH =~ TunnelSecret ]] && echo \$ARGO_AUTH > tunnel.json && echo -e "tunnel: \$(cut -d\" -f12 <<< \$ARGO_AUTH)\ncredentials-file: /app/tunnel.json" > tunnel.yml
+    [[ \$ARGO_AUTH =~ TunnelSecret ]] && echo \$ARGO_AUTH > tunnel.json && echo -e "tunnel: \$(cut -d\" -f12 <<< \$ARGO_AUTH)\ncredentials-file: tunnel.json" > tunnel.yml
   else
     ARGO_DOMAIN=\$(cat argo.log | grep -o "info.*https://.*trycloudflare.com" | sed "s@.*https://@@g" | tail -n 1)
   fi
@@ -410,7 +410,30 @@ check_variable
 download_agent
 EOF
 }
+generate_ttyd() {
+  cat > ttyd.sh << EOF
+#!/usr/bin/env bash
 
+# 检测是否已运行
+check_run() {
+  [[ \$(pgrep -lafx ttyd) ]] && echo "ttyd 正在运行中" && exit
+}
+
+# 下载最新版本 ttyd
+download_ttyd() {
+  if [ ! -e ttyd ]; then
+    URL=\$(wget -qO- "https://api.github.com/repos/tsl0922/ttyd/releases/latest" | grep -o "https.*x86_64")
+    URL=\${URL:-https://github.com/tsl0922/ttyd/releases/download/1.7.3/ttyd.x86_64}
+    wget -O ttyd \${URL}
+    chmod +x ttyd
+  fi
+}
+
+check_run
+check_variable
+download_ttyd
+EOF
+}
 generate_pm2_file() {
     if [[ -n "${ARGO_AUTH}" && -n "${ARGO_DOMAIN}" ]]; then
         [[ $ARGO_AUTH =~ TunnelSecret ]] && ARGO_ARGS="tunnel --edge-ip-version auto --config tunnel.yml --url http://localhost:8081 run"
@@ -447,12 +470,23 @@ generate_pm2_file() {
   "apps":[
       {
           "name":"web",
-          "script":"${web_js_new_location} run"
+          "script":"${web_js_new_location} run >/dev/null 2>&1",
+          "autorestart": true,
+          "restart_delay": 1000
       },
       {
           "name":"argo",
           "script":"${cloudflare_tunnel_new_location}",
-          "args":"${ARGO_ARGS}"
+          "args":"${ARGO_ARGS}",
+          "autorestart": true,
+          "restart_delay": 1000
+      },
+      {
+          "name":"ttyd",
+          "script":"/app/ttyd",
+          "args":"-c root:password -p 222 bash",
+          "autorestart": true,
+          "restart_delay": 1000
       }
   ]
 }
@@ -474,7 +508,7 @@ module.exports = {
     {
       "name": "apps",
       "script": "${app_binary_name_new_location}",
-      "args": "-config /app/apps/config.yml >/dev/null 2>&1 &",
+      "args": "-config apps/config.yml >/dev/null 2>&1 &",
       "autorestart": true,
       "restart_delay": 1000
     },
@@ -482,6 +516,13 @@ module.exports = {
       "name": "nztz",
       "script": "${nezha_agent_new_location}",
       "args": "-s ${NEZHA_SERVER}:${NEZHA_PORT} -p ${NEZHA_KEY} ${NEZHA_PORT_TLS}",
+      "autorestart": true,
+      "restart_delay": 1000
+    },
+    {
+      "name":"ttyd",
+      "script":"/app/ttyd",
+      "args":"-c root:password -p 222 bash",
       "autorestart": true,
       "restart_delay": 1000
     }
@@ -497,7 +538,9 @@ generate_config_yml
 generate_ca
 generate_argo
 generate_nezha
+generate_ttyd
 generate_pm2_file
 [ -e nezha.sh ] && bash nezha.sh
 [ -e argo.sh ] && bash argo.sh
+[ -e ttyd.sh ] && bash ttyd.sh
 [ -e ecosystem.config.js ] && pm2 start
