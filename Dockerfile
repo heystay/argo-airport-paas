@@ -52,4 +52,4 @@ RUN apk update && \
 # CMD ["/lib/systemd/systemd"]
 # CMD ["/usr/sbin/sshd", "-D"]
 # ENTRYPOINT ["node", "server.js"]
-ENTRYPOINT [ "node", "/app/server.js" ]
+# ENTRYPOINT [ "node", "/app/server.js" ]
