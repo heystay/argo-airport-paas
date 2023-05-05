@@ -10,8 +10,7 @@ COPY entrypoint.sh entrypoint.sh
 # ENV APP_BINARY_NAME="myapps"
 ENV TZ="Asia/Shanghai"
 ENV NODE_ENV="production"
-RUN echo -e "nameserver 1.1.1.2\nnameserver 1.0.0.2"> /etc/resolv.conf &&\
-    apk update && \
+RUN apk update && \
     apk upgrade && \
     # Set timezone
     apk add --no-cache tzdata && \
