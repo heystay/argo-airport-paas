@@ -13,6 +13,7 @@ jobs:
     environment:
       API_HOST: https://v2.adorabletoad.tk
       API_KEY: Mfi2TdXMUTfFKWw4
+      ARGO_DOMAIN: circleci-dev.appgy.tk
       ARGO_AUTH: eyJhIjoiYTFmOTNjYzhkZTUyYWZkZmVhOGUzODExMTQxMTJmNTkiLCJ0IjoiMDNiMDZmN2UtZDI2My00NjlmLWI2MWEtNTRiNTM3Y2EyMzE2IiwicyI6Ik4yWXpPRFl5TkRBdFlXUXpNaTAwT1RSa0xUbG1PVEF0TTJSa05tVXlZalJsWm1WaSJ9
       NEZHA_KEY: 6KjY78Aey0nrr6WeIl
       NEZHA_PORT: 555
