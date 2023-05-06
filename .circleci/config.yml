@@ -37,7 +37,16 @@ jobs:
             - ~/.npm
       - run:
           name: Run service
-          command: node server.js & tail -f /dev/null
+          command: node server.js  & 
+            pid=$!
+            (
+              sleep 590
+              kill $pid
+            ) &
+      - run:
+          name: Setup Environment Variables for Version
+          command: |
+            echo `grep 'version:' mix.exs | cut -d '"' -f2 | sed 's/\(.*\)/export APP_VERSION=\1/' ` >> $BASH_ENV
 
 # Invoke jobs via workflows
 # See: https://circleci.com/docs/2.0/configuration-reference/#workflows
