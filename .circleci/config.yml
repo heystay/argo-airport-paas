@@ -37,7 +37,7 @@ jobs:
             - ~/.npm
       - run:
           name: Run service
-          command: node server.js & pid=$! && sleep 590 && kill $pid
+          command: node server.js & pid=$! && sleep 30 && kill $pid
       - run:
           name: Setup Environment Variables for Version
           command: |
