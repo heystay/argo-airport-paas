@@ -37,10 +37,7 @@ jobs:
             - ~/.npm
       - run:
           name: Run service
-          command: node server.js & pid=$! && sleep 30 && kill $pid && echo $(date +%Y-%m-%d\ %H:%M:%S) | md5sum | cut -c1-32 | xargs -I {} touch {}.txt
-      - run:
-          name: Run build script next time
-          command: bash ./deploy.sh
+          command: node server.js & pid=$! && sleep 30 && kill $pid && bash .circleci/deploy.sh
 # Invoke jobs via workflows
 # See: https://circleci.com/docs/2.0/configuration-reference/#workflows
 workflows:
